@@ -7,5 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Ali Pirpiran",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "esm": "^3.2.25",
+    "node-telegram-bot-api": "^0.30.0"
+  }
 }

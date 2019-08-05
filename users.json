@@ -1,1 +1,5 @@
-{"allUsers":[{"name":"Ali","chat_id":167218265,"channel_id":"","posts":[]}]}
+{
+    "allUsers":[
+    {"name":"Ali","chat_id":167218265,"channel_id":"@channel","posts":[],"status":"none"}
+    ]
+}

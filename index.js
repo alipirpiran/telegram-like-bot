@@ -16,12 +16,13 @@ if(URL){
         }
     });
     bot.setWebHook(URL + '/' + TOKEN);
-    
+    console.log('setting webhook : ' + URL + '/' + TOKEN)
 }else{
     bot = new Telegram(TOKEN, {
         polling: true
     });
-    
+
+    console.log('setting polling')
 }
 
 

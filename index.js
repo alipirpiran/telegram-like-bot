@@ -68,7 +68,7 @@ class User {
     }
 }
 
-setAllUsers();
+// setAllUsers();
 let users = new Set();
 
 bot.onText(/\/start/, msg => {

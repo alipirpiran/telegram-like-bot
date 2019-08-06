@@ -279,6 +279,7 @@ function setLikeString(chat_id, entryMessageId) {
     متن دکمه لایک را ارسال کنید
     برای مثال : 👍🏼
 
+    
 `;
     if (entryMessageId) {
     } else {

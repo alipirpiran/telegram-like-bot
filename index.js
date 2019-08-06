@@ -105,6 +105,20 @@ bot.on('message', msg => {
 
     switch (user.status) {
         case Status.ADD_CHANNEL:
+            if(!msg.text){
+                bot.sendMessage(chatId, 'ایدی کانال را ارسال کنید');
+                return;
+            }
+            if(msg.text.charAt(0) !== '@'){
+                const message = 
+                `
+🔻  ایدی کانال باید با @ شروع شود !
+
+🔸 دوباره ارسال کنید : 
+                `
+                bot.sendMessage(chatId, message)
+                return;
+            }
             let channel_id = msg.text;
             user.channel_id = channel_id;
             user.status = Status.NONE;

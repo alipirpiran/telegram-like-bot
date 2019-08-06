@@ -31,10 +31,10 @@ export const getMessageType = (msg) => {
 
 }
 
-export const getPost = (id, posts) => {
+export const getPost = (chid, id, posts) => {
     for (const post of posts) {
-        for (const mid of post.ids) {
-            if (mid === id) {
+        for (const {chat_id, message_id} of post.ids) {
+            if (message_id === id && chat_id === chid) {
                 return post;
             }
         }

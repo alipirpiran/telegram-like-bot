@@ -15,15 +15,18 @@ const Status = {
     NONE: 'none'
 };
 
+class PostID{
+    constructor(chat_id, message_id){
+        this.chat_id = chat_id;
+        this.message_id = message_id;
+    }
+}
+
 class Post {
     constructor() {
         // messages ids
         /*
-            todo :
-            post ids : {
-                chat instance id : ...
-                message id : ...
-            }
+           array of postId s
         */
         this.ids = [];
 
@@ -72,6 +75,7 @@ bot.on('message', msg => {
     let user = app.getUser(chatId, users);
 
     if (!user) {
+        console.log('new user')
         user = new User();
         user.chat_id = chatId;
         user.name = name;
@@ -83,7 +87,7 @@ bot.on('message', msg => {
             let channel_id = msg.text;
             user.channel_id = channel_id;
             user.status = Status.NONE;
-            updateUsersInfoInFile();
+            updateUserInfoInFile(user);
             mainMenu(chatId);
             break;
 
@@ -108,11 +112,7 @@ function sendNewPost(msg) {
             bot.sendMessage(chat_id, msg.text, {
                 reply_markup: form
             }).then(msg => {
-                let post = new Post();
-                post.message = msg;
-                post.type = app.MessageType.TEXT;
-                post.ids.push(msg.message_id);
-                admin.posts.push(post);
+                addNewPostToUser(chat_id, msg);
             });
             break;
 
@@ -124,11 +124,7 @@ function sendNewPost(msg) {
                 reply_markup: form,
                 caption
             }).then(msg => {
-                let post = new Post();
-                post.ids.push(msg.message_id);
-                post.type = app.MessageType.PHOTO;
-                post.message = msg;
-                admin.posts.push(post);
+                addNewPostToUser(chat_id, msg);
             });
             break;
 
@@ -138,14 +134,24 @@ function sendNewPost(msg) {
         case app.MessageType.voice:
             break;
     }
+
+}
+
+function addNewPostToUser(chat_id, msg){
+    let admin = app.getUser(chat_id, users);
+    let post = new Post();
+    let postId = new PostID(chat_id, msg.message_id);
+    post.ids.push(postId);
+    post.type = app.getMessageType(msg);
+    console.log(post.type)
+    post.message = msg;
+    admin.posts.push(post);
 }
 
 function likePost(chat_id, message_id, user_id) {
     const admin = app.getUser(chat_id, users);
-    const post = app.getPost(message_id, admin.posts);
-    const channel_id = admin.channel_id;
+    const post = app.getPost(admin.channel_id, message_id, admin.posts);
 
-    console.log(post)
 
     if (!post) {
         return;
@@ -153,14 +159,14 @@ function likePost(chat_id, message_id, user_id) {
 
     for (const user of post.membersWhoLikes) {
         if (user === user_id) {
-            changeLikes(channel_id, post, user_id, -1, chat_id);
+            changeLikes(post, user_id, -1, chat_id);
             return;
         }
     }
-    changeLikes(channel_id, post, user_id, +1, chat_id);
+    changeLikes(post, user_id, +1, chat_id);
 }
 
-function changeLikes(chat_id, post, user_id, val, adminChatId) {
+function changeLikes(post, user_id, val, adminChatId) {
     if (val === 1) {
         post.membersWhoLikes.push(user_id);
         post.likes++;
@@ -171,10 +177,10 @@ function changeLikes(chat_id, post, user_id, val, adminChatId) {
 
     const form = forms.likeBtn('like ' + post.likes, adminChatId);
 
-    for (const msgId of post.ids) {
+    for (const {chat_id, message_id} of post.ids) {
         bot.editMessageReplyMarkup(form, {
             chat_id,
-            message_id: msgId
+            message_id
         });
     }
 }
@@ -232,7 +238,7 @@ bot.on('callback_query', msg => {
 
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
-    const post = app.getPost(message_id, admin.posts);
+    const post = app.getPost(chat_id, message_id, admin.posts);
     const form = forms.likeBtn('like ' + post.likes, chat_id);
 
     switch (post.type) {
@@ -240,19 +246,37 @@ function sendPostToChannel(chat_id, message_id) {
             bot.sendMessage(admin.channel_id, post.message.text, {
                 reply_markup: form
             }).then(msg => {
-                post.ids.push(msg.message_id)
-                console.log(post)
+                let postId = new PostID(admin.channel_id, msg.message_id);
+                post.ids.push(postId)
             });
             break;
     }
 
+    updateUserInfoInFile(admin)
+
+
 }
 
 function setAllUsers() {
-    fs.readFile('users.json', (err, data) => {
-        let a = JSON.parse(data.toString());
-        users = new Set(a.allUsers);
-    });
+
+    fs.readdir('./users/', (err, files) => {
+        if(err){
+            console.log(err);
+            return;
+        }
+        for (const fileName of files) {
+            fs.readFile('users/' + fileName, (err, data) => {
+                if(err){
+                    // console.log(err);
+                    return;
+                }
+                const user = JSON.parse(data);
+                users.add(user)
+            })
+        }
+
+        
+    })
 }
 
 function isNewUser(chat_id) {
@@ -261,15 +285,23 @@ function isNewUser(chat_id) {
 
 function addNewUser(user) {
     users.add(user);
-    updateUsersInfoInFile();
+    updateUserInfoInFile(user);
 }
 
-function updateUsersInfoInFile() {
-    let data = {
-        allUsers: [...users]
-    };
+function updateUserInfoInFile(user) {
+    // let data = {
+    //     allUsers: [...users]
+    // };
 
-    fs.writeFile('./users.json', JSON.stringify(data), err => {
-        console.log(err);
-    });
+    // fs.writeFile('./users.json', JSON.stringify(data), err => {
+    //     console.log(err);
+    // });
+
+    console.log(user)
+    fs.writeFile('./users/' + user.chat_id, JSON.stringify(user), err => {
+        // console.log(err)
+    })
+
+
+
 }

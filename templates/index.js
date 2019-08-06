@@ -7,6 +7,7 @@ export const mainMenu = (name, channelName) => {
 
 export const setChannel = () => {
     return `
-لطفا ایدی کانال خود را به صورت : @ID وارد کنید
+لطفا ایدی کانال خود را به صورت زیر ارسال کنید
+@ID
     `
 }

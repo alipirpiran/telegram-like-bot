@@ -75,6 +75,8 @@ bot.on('message', msg => {
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
 
+    console.log(msg)
+
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
     }
@@ -266,7 +268,7 @@ function sendAllTypesMessages(chat_id, msg, form, callback) {
             break;
 
         case app.MessageType.audio:
-            bot.sendAudio(chat_id, msg.audio, {
+            bot.sendAudio(chat_id, msg.audio.file_id, {
                 reply_markup: form,
                 caption
             }).then(callback);
@@ -280,14 +282,14 @@ function sendAllTypesMessages(chat_id, msg, form, callback) {
             break;
 
         case app.MessageType.video:
-            bot.sendVideo(chat_id, msg.video, {
+            bot.sendVideo(chat_id, msg.video.file_id, {
                 reply_markup: form,
                 caption
             }).then(callback);
             break;
 
         case app.MessageType.voice:
-            bot.sendVoice(chat_id, msg.voice, {
+            bot.sendVoice(chat_id, msg.voice.file_id, {
                 reply_markup: form,
                 caption
             }).then(callback);

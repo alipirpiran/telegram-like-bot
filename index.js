@@ -12,11 +12,12 @@ const bot = new Telegram(TOKEN, {
 
 const Status = {
     ADD_CHANNEL: 'addchannel',
-    NONE: 'none'
+    NONE: 'none',
+    SET_LIKE_STR: 'setlikestr'
 };
 
-class PostID{
-    constructor(chat_id, message_id){
+class PostID {
+    constructor(chat_id, message_id) {
         this.chat_id = chat_id;
         this.message_id = message_id;
     }
@@ -24,7 +25,6 @@ class PostID{
 
 class Post {
     constructor() {
-        // messages ids
         /*
            array of postId s
         */
@@ -45,11 +45,13 @@ class User {
         this.chat_id = '';
         this.channel_id = '';
         this.status = Status.NONE;
+        this.likeString = '❤️';
 
         // post message_id
         this.posts = [];
     }
 }
+
 
 setAllUsers();
 let users = new Set();
@@ -59,7 +61,6 @@ bot.onText(/\/start/, msg => {
     let name = msg.chat.first_name;
 
     if (isNewUser(chatId)) {
-        console.log('new User');
         let user = new User();
         user.chat_id = chatId;
         user.name = name;
@@ -74,8 +75,12 @@ bot.on('message', msg => {
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
 
+    if (msg.text) {
+        if (msg.text.charAt(0) === '/') return;
+    }
+
     if (!user) {
-        console.log('new user')
+        console.log('new user');
         user = new User();
         user.chat_id = chatId;
         user.name = name;
@@ -98,52 +103,33 @@ bot.on('message', msg => {
             }
             sendNewPost(msg);
             break;
+
+        case Status.SET_LIKE_STR:
+            user.likeString = msg.text;
+            user.status = Status.NONE;
+            updateUserInfoInFile(user)
+            mainMenu(user.chat_id)
+        break;
     }
 });
 
 function sendNewPost(msg) {
     const chat_id = msg.chat.id;
-    const caption = msg.caption;
     const admin = app.getUser(chat_id, users);
-    let form = forms.sendPost('like');
+    let form = forms.sendPost(admin.likeString);
+    const callback = msg => {
+        addNewPostToUser(chat_id, msg);
+    };
 
-    switch (app.getMessageType(msg)) {
-        case app.MessageType.TEXT:
-            bot.sendMessage(chat_id, msg.text, {
-                reply_markup: form
-            }).then(msg => {
-                addNewPostToUser(chat_id, msg);
-            });
-            break;
-
-        case app.MessageType.audio:
-            break;
-
-        case app.MessageType.PHOTO:
-            bot.sendPhoto(chat_id, msg.photo[0].file_id, {
-                reply_markup: form,
-                caption
-            }).then(msg => {
-                addNewPostToUser(chat_id, msg);
-            });
-            break;
-
-        case app.MessageType.video:
-            break;
-
-        case app.MessageType.voice:
-            break;
-    }
-
+    sendAllTypesMessages(chat_id, msg, form, callback);
 }
 
-function addNewPostToUser(chat_id, msg){
+function addNewPostToUser(chat_id, msg) {
     let admin = app.getUser(chat_id, users);
     let post = new Post();
     let postId = new PostID(chat_id, msg.message_id);
     post.ids.push(postId);
     post.type = app.getMessageType(msg);
-    console.log(post.type)
     post.message = msg;
     admin.posts.push(post);
 }
@@ -151,7 +137,6 @@ function addNewPostToUser(chat_id, msg){
 function likePost(chat_id, message_id, user_id) {
     const admin = app.getUser(chat_id, users);
     const post = app.getPost(admin.channel_id, message_id, admin.posts);
-
 
     if (!post) {
         return;
@@ -167,6 +152,8 @@ function likePost(chat_id, message_id, user_id) {
 }
 
 function changeLikes(post, user_id, val, adminChatId) {
+    const admin = app.getUser(adminChatId, users);
+
     if (val === 1) {
         post.membersWhoLikes.push(user_id);
         post.likes++;
@@ -175,20 +162,21 @@ function changeLikes(post, user_id, val, adminChatId) {
         post.likes--;
     }
 
-    const form = forms.likeBtn('like ' + post.likes, adminChatId);
+    const form = forms.likeBtn(`${admin.likeString} ${post.likes}`, adminChatId);
 
-    for (const {chat_id, message_id} of post.ids) {
+    for (const { chat_id, message_id } of post.ids) {
         bot.editMessageReplyMarkup(form, {
             chat_id,
             message_id
         });
     }
+    updateUserInfoInFile(app.getUser(adminChatId, users));
 }
 
 function mainMenu(chatId) {
     let user = app.getUser(chatId, users);
     let message = templates.mainMenu(user.name, user.channel_id);
-    let form = forms.mainMenu();
+    let form = forms.mainMenu(user);
 
     bot.sendMessage(chatId, message, {
         reply_markup: form
@@ -213,13 +201,12 @@ function setChannelId(chatId, entryMessageId) {
 
 bot.on('callback_query', msg => {
     const chat_id = msg.message.chat.id;
-    
     const message_id = msg.message.message_id;
     const data = JSON.parse(msg.data);
 
     switch (data.type) {
         case forms.callback_type.SET_CHANNEL:
-            setChannelId(chat_id, message_id);
+            setChannelId(chat_id);
             break;
 
         case forms.callback_type.LIKE:
@@ -228,55 +215,103 @@ bot.on('callback_query', msg => {
             break;
 
         case forms.callback_type.SEND:
-        
             sendPostToChannel(chat_id, message_id);
+            break;
+
+        case forms.callback_type.LIKE_SET:
+            setLikeString(chat_id);
             break;
     }
 
     bot.answerCallbackQuery(msg.id);
 });
 
+function setLikeString(chat_id, entryMessageId) {
+    const user = app.getUser(chat_id, users);
+    user.status = Status.SET_LIKE_STR;
+
+    const message = `
+    متن دکمه لایک را ارسال کنید
+    برای مثال : ❤️ 👍🏾
+
+`;
+    if (entryMessageId) {
+    } else {
+        bot.sendMessage(chat_id, message);
+    }
+}
+
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
     const post = app.getPost(chat_id, message_id, admin.posts);
-    const form = forms.likeBtn('like ' + post.likes, chat_id);
+    const form = forms.likeBtn(`${admin.likeString} ${post.likes}` , chat_id);
+    const callback = msg => {
+        let postId = new PostID(admin.channel_id, msg.message_id);
+        post.ids.push(postId);
+    };
 
-    switch (post.type) {
+    sendAllTypesMessages(admin.channel_id, post.message, form, callback);
+
+    updateUserInfoInFile(admin);
+}
+
+function sendAllTypesMessages(chat_id, msg, form, callback) {
+    const caption = msg.caption;
+
+    switch (app.getMessageType(msg)) {
         case app.MessageType.TEXT:
-            bot.sendMessage(admin.channel_id, post.message.text, {
+            bot.sendMessage(chat_id, msg.text, {
                 reply_markup: form
-            }).then(msg => {
-                let postId = new PostID(admin.channel_id, msg.message_id);
-                post.ids.push(postId)
-            });
+            }).then(callback);
+            break;
+
+        case app.MessageType.audio:
+            bot.sendAudio(chat_id, msg.audio, {
+                reply_markup: form,
+                caption
+            }).then(callback);
+            break;
+
+        case app.MessageType.PHOTO:
+            bot.sendPhoto(chat_id, msg.photo[0].file_id, {
+                reply_markup: form,
+                caption
+            }).then(callback);
+            break;
+
+        case app.MessageType.video:
+            bot.sendVideo(chat_id, msg.video, {
+                reply_markup: form,
+                caption
+            }).then(callback);
+            break;
+
+        case app.MessageType.voice:
+            bot.sendVoice(chat_id, msg.voice, {
+                reply_markup: form,
+                caption
+            }).then(callback);
             break;
     }
-
-    updateUserInfoInFile(admin)
-
-
 }
 
 function setAllUsers() {
-
     fs.readdir('./users/', (err, files) => {
-        if(err){
+        if (err) {
             console.log(err);
             return;
         }
         for (const fileName of files) {
             fs.readFile('users/' + fileName, (err, data) => {
-                if(err){
+                if (err) {
                     // console.log(err);
                     return;
                 }
                 const user = JSON.parse(data);
-                users.add(user)
-            })
+                users.add(user);
+            });
         }
-
-        
-    })
+    });
 }
 
 function isNewUser(chat_id) {
@@ -289,19 +324,5 @@ function addNewUser(user) {
 }
 
 function updateUserInfoInFile(user) {
-    // let data = {
-    //     allUsers: [...users]
-    // };
-
-    // fs.writeFile('./users.json', JSON.stringify(data), err => {
-    //     console.log(err);
-    // });
-
-    console.log(user)
-    fs.writeFile('./users/' + user.chat_id, JSON.stringify(user), err => {
-        // console.log(err)
-    })
-
-
-
+    fs.writeFileSync('./users/' + user.chat_id, JSON.stringify(user));
 }

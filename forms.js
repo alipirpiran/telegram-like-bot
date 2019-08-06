@@ -4,14 +4,17 @@ import { toUnicode } from "punycode";
 export const callback_type = {
     SET_CHANNEL : 'setchannel',
     LIKE : 'like',
-    SEND : 'send'
+    SEND : 'send',
+    LIKE_SET : 'like_set'
 }
-export const mainMenu = () => {
+export const mainMenu = (user) => {
     // complete the data 
     let calback = JSON.stringify(createCallBackData(callback_type.SET_CHANNEL, 'data tha i added !'));
+    let callback_like = JSON.stringify(createCallBackData(callback_type.LIKE_SET, ''))
     return {
         inline_keyboard: [
-            [createButton('ثبت کانال', calback)]
+            [createButton('ثبت کانال', calback)],
+            [createButton(`[${user.likeString}] تنظیم دکمه لایک`, callback_like)]
         ]
     }
 }

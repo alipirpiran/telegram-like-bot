@@ -5,10 +5,25 @@ const app = require('./funcs.js');
 const fs = require('fs');
 const forms = require('./forms');
 
+const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
-const bot = new Telegram(TOKEN, {
-    polling: true
-});
+
+let bot;
+if(URL){
+    bot = new Telegram(TOKEN, {
+        webHook :{
+            port : 443
+        }
+    });
+    bot.setWebHook(URL + '/' + TOKEN);
+    
+}else{
+    bot = new Telegram(TOKEN, {
+        polling: true
+    });
+    
+}
+
 
 const Status = {
     ADD_CHANNEL: 'addchannel',
@@ -279,7 +294,7 @@ function setLikeString(chat_id, entryMessageId) {
     متن دکمه لایک را ارسال کنید
     برای مثال : 👍🏼
 
-    
+
 `;
     if (entryMessageId) {
     } else {

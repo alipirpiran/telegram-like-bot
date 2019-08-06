@@ -52,7 +52,6 @@ class User {
     }
 }
 
-
 setAllUsers();
 let users = new Set();
 
@@ -70,12 +69,27 @@ bot.onText(/\/start/, msg => {
     mainMenu(chatId);
 });
 
+bot.onText(/\/Cancel/, msg => {
+    let chat_id = msg.chat.id;
+    const user = app.getUser(chat_id, users);
+
+    updateUserInfoInFile(user);
+    if (user.status === Status.ADD_CHANNEL)
+        bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!');
+
+        if(user.status === Status.SET_LIKE_STR)
+        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!');
+    user.status = Status.NONE;
+
+    mainMenu(chat_id)
+});
+
 bot.on('message', msg => {
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
 
-    console.log(msg)
+    console.log(msg);
 
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
@@ -100,6 +114,10 @@ bot.on('message', msg => {
 
         case Status.NONE:
             if (!user.channel_id) {
+                bot.sendMessage(
+                    chatId,
+                    '💬 شما هنوز کانال خود را ثبت نکرده اید ...'
+                );
                 setChannelId(chatId);
                 break;
             }
@@ -109,9 +127,9 @@ bot.on('message', msg => {
         case Status.SET_LIKE_STR:
             user.likeString = msg.text;
             user.status = Status.NONE;
-            updateUserInfoInFile(user)
-            mainMenu(user.chat_id)
-        break;
+            updateUserInfoInFile(user);
+            mainMenu(user.chat_id);
+            break;
     }
 });
 
@@ -164,7 +182,10 @@ function changeLikes(post, user_id, val, adminChatId) {
         post.likes--;
     }
 
-    const form = forms.likeBtn(`${admin.likeString} ${post.likes}`, adminChatId);
+    const form = forms.likeBtn(
+        `${admin.likeString} ${post.likes}`,
+        adminChatId
+    );
 
     for (const { chat_id, message_id } of post.ids) {
         bot.editMessageReplyMarkup(form, {
@@ -223,6 +244,14 @@ bot.on('callback_query', msg => {
         case forms.callback_type.LIKE_SET:
             setLikeString(chat_id);
             break;
+
+        case forms.callback_type.MAIN_MENU:
+            mainMenu(chat_id);
+            break;
+
+        case forms.callback_type.HELP:
+            help(chat_id);
+            break;
     }
 
     bot.answerCallbackQuery(msg.id);
@@ -243,10 +272,15 @@ function setLikeString(chat_id, entryMessageId) {
     }
 }
 
+function help(chat_id) {
+    const message = templates.help;
+    bot.sendMessage(chat_id, message);
+}
+
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
     const post = app.getPost(chat_id, message_id, admin.posts);
-    const form = forms.likeBtn(`${admin.likeString} ${post.likes}` , chat_id);
+    const form = forms.likeBtn(`${admin.likeString} ${post.likes}`, chat_id);
     const callback = msg => {
         let postId = new PostID(admin.channel_id, msg.message_id);
         post.ids.push(postId);

@@ -1,10 +1,18 @@
 # telegram-like-bot
+
 simple telegram bot to add like button under posts
 
-** telegram like bot setup **
- 1- create .env file in main project dir
-    *.env file structure*
-        TOKEN=<YOUR_BOT_TOKEN>
- 2- start the index.js :
-  *node -r esm index.js*
-    
+<h3>telegram like bot setup</h3>
+<ul>
+<li>create .env file in main project dir <br>
+<i>.env file structure</i>
+<br>
+<i > TOKEN=YOUR_BOT_TOKEN</i>
+</li>
+
+<li>run index.js <br>
+    <i>node -r esm index.js</i>
+
+</li>
+
+</ul>

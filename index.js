@@ -10,17 +10,15 @@ const bodyParser = require('body-parser');
 
 const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
+const port = process.env.PORT | 3000;
 
 let exp;
 
 let bot;
 if (URL) {
-    bot = new Telegram(TOKEN, {
-        webHook: {
-            port: 443
-        }
-    });
+    bot = new Telegram(TOKEN);
     bot.setWebHook(URL + '/' + TOKEN);
+
     console.log('setting webhook : ' + URL + '/' + TOKEN);
 
     exp = express();
@@ -34,7 +32,7 @@ if (URL) {
     app.listen(port, () => {
         console.log(`Express server is listening on ${port}`);
     });
-    
+
 } else {
     bot = new Telegram(TOKEN, {
         polling: true

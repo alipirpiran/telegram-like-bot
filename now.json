@@ -1,0 +1,17 @@
+{
+    "version": 2,
+    "name": "telegram-like-bot",
+    "builds": [
+        {
+            "src": "*.js",
+            "use": "@now/node"
+            
+        }
+    ],
+    "build":{
+        "env": {
+          "TOKEN": "@token"
+      }
+    },
+    "routes": []
+}

@@ -118,17 +118,21 @@ bot.onText(/\/Cancel/, msg => {
         addNewUser(user);
     }
 
-    updateUserInfoInFile(user);
+    
     if (user.status === Status.ADD_CHANNEL)
-        bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!');
+        bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!').then(msg => mainMenu(chat_id));
 
     if (user.status === Status.SET_LIKE_STR)
-        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!');
+        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!').then(msg => mainMenu(chat_id));
 
     user.status = Status.NONE;
-
-    mainMenu(chat_id);
+    updateUserInfoInFile(user);
+    
 });
+
+bot.onText(/\/setting/, msg=>{
+    mainMenu(msg.chat.id);
+})
 
 bot.on('message', msg => {
     const chatId = msg.chat.id;

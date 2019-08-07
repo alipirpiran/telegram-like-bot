@@ -131,6 +131,9 @@ bot.onText(/\/Cancel/, msg => {
 });
 
 bot.onText(/\/setting/, msg=>{
+    let chat_id = msg.chat.id;
+    let name = msg.chat.first_name;
+
     let user = app.getUser(chat_id, users);
     if (!user) {
         console.log('new user');
@@ -148,7 +151,7 @@ bot.onText(/\/setting/, msg=>{
 
 bot.on('message', msg => {
     console.log(`Message | ${msg.from.first_name} : ${msg.chat.id}  type : ${app.getMessageType(msg)}`);
-    
+
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);

@@ -10,7 +10,8 @@ const bodyParser = require('body-parser');
 
 const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
-const port = process.env.PORT | 3000;
+const port = process.env.PORT || 3000;
+
 
 let exp;
 

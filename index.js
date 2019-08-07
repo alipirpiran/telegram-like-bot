@@ -348,7 +348,8 @@ function sendPostToChannel(chat_id, message_id) {
 
 function sendAllTypesMessages(chat_id, msg, form, callback) {
     const caption = msg.caption;
-
+console.log(caption)
+    console.log(app.getMessageType(msg))
     switch (app.getMessageType(msg)) {
         case app.MessageType.TEXT:
             bot.sendMessage(chat_id, msg.text, {

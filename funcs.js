@@ -17,6 +17,7 @@ exports.MessageType = {
 }
 
 exports.getMessageType = (msg) => {
+    const MessageType = this.MessageType;
     if(msg.text)
         return MessageType.TEXT;
     if(msg.photo)

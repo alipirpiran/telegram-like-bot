@@ -26,7 +26,6 @@ if (URL) {
         console.log(`Express server is listening on ${port}`);
     });
     exp.all(`/bot${TOKEN}`, (req, res) => {
-        console.log(req.body);
         bot.processUpdate(req.body);
         res.sendStatus(200);
         res.end();
@@ -135,7 +134,6 @@ bot.on('message', msg => {
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
-    
 
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
@@ -150,7 +148,7 @@ bot.on('message', msg => {
         addNewUser(user);
     }
 
-    if(!user.user_id){
+    if (!user.user_id) {
         user.user_id = msg.from.id;
         updateUserInfoInFile(user);
     }
@@ -170,6 +168,7 @@ bot.on('message', msg => {
                 bot.sendMessage(chatId, message);
                 return;
             }
+
             let channel_id = msg.text;
 
             switch (isAdminOfChannel(channel_id, user.user_id)) {
@@ -180,6 +179,9 @@ bot.on('message', msg => {
                 case Result.USER_IS_NOT_ADMIN:
                     bot.sendMessage(user.chat_id, templates.user_is_not_admin);
                     return;
+
+                case true:
+                    break;
             }
 
             user.channel_id = channel_id;
@@ -354,18 +356,18 @@ function setLikeString(chat_id, entryMessageId) {
     }
 }
 function isAdminOfChannel(channel_id, admin_id) {
-    bot.getChatAdministrators('@alitestforbot')
+    bot.getChatAdministrators(channel_id)
         .then(msg => {
-            for (const user of msg) {
-                if (user.user.id === admin_id) {
+            for (const usr of msg) {
+                if (usr.user.id === admin_id) {
                     return true;
                 }
             }
+            return Result.USER_IS_NOT_ADMIN;
         })
         .catch(res => {
             return Result.BOT_IS_NOT_ADMIN;
         });
-    return Result.USER_IS_NOT_ADMIN;
 }
 
 function help(chat_id) {

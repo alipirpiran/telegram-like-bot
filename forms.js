@@ -9,10 +9,7 @@ exports.callback_type = {
     MAIN_MENU : 'mainmenu',
     HELP : 'help'
 }
-exports.mainMenu = (user) => {
-    // complete the data 
-    console.log(user)
-    
+exports.mainMenu = (user) => {    
     let calback = JSON.stringify(createCallBackData(this.callback_type.SET_CHANNEL, 'data tha i added !'));
     let callback_like = JSON.stringify(createCallBackData(this.callback_type.LIKE_SET, ''));
     let callback_help = JSON.stringify(createCallBackData(this.callback_type.HELP, ''));

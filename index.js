@@ -135,6 +135,7 @@ bot.on('message', msg => {
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
+    
 
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
@@ -147,6 +148,11 @@ bot.on('message', msg => {
         user.name = name;
         user.user_id = msg.from.id;
         addNewUser(user);
+    }
+
+    if(!user.user_id){
+        user.user_id = msg.from.id;
+        updateUserInfoInFile(user);
     }
 
     switch (user.status) {

@@ -149,6 +149,25 @@ bot.onText(/\/setting/, msg=>{
     mainMenu(msg.chat.id);
 })
 
+bot.onText(/\/help/, msg=>{
+    let chat_id = msg.chat.id;
+    let name = msg.chat.first_name;
+
+    let user = app.getUser(chat_id, users);
+    if (!user) {
+        console.log('new user');
+        user = new User();
+        user.chat_id = chat_id;
+        user.name = name;
+        user.user_id = msg.from.id;
+        addNewUser(user);
+    }
+    user.status = Status.NONE;
+    updateUserInfoInFile(user);
+
+    bot.sendMessage(chat_id, templates.help);
+})
+
 bot.on('message', msg => {
     console.log(`Message | ${msg.from.first_name} : ${msg.chat.id}  type : ${app.getMessageType(msg)}`);
 

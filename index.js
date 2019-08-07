@@ -12,28 +12,25 @@ const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
 const port = process.env.PORT || 3000;
 
-
 let exp;
-
 let bot;
 if (URL) {
     bot = new Telegram(TOKEN);
-    bot.setWebHook(URL + '/' + TOKEN);
-
+    bot.setWebHook(URL + '/bot' + TOKEN);
     console.log('setting webhook : ' + URL + '/' + TOKEN);
 
     exp = express();
-    exp.use(bodyParser);
-
-    exp.post(`/bot${TOKEN}`, (req, res) => {
-        bot.processUpdate(req.body);
-        res.sendStatus(200);
-    });
+    exp.use(bodyParser.json());
 
     exp.listen(port, () => {
         console.log(`Express server is listening on ${port}`);
     });
-
+    exp.all(`/bot${TOKEN}`, (req, res) => {
+        console.log(req.body);
+        bot.processUpdate(req.body);
+        res.sendStatus(200);
+        res.end();
+    });
 } else {
     bot = new Telegram(TOKEN, {
         polling: true

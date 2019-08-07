@@ -5,8 +5,13 @@ const app = require('./funcs.js');
 const fs = require('fs');
 const forms = require('./forms');
 
+const express = require('express');
+const bodyParser = require('body-parser');
+
 const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
+
+let exp;
 
 let bot;
 if (URL) {
@@ -17,6 +22,19 @@ if (URL) {
     });
     bot.setWebHook(URL + '/' + TOKEN);
     console.log('setting webhook : ' + URL + '/' + TOKEN);
+
+    exp = express();
+    exp.use(bodyParser);
+
+    exp.post(`/bot${TOKEN}`, (req, res) => {
+        bot.processUpdate(req.body);
+        res.sendStatus(200);
+    });
+
+    app.listen(port, () => {
+        console.log(`Express server is listening on ${port}`);
+    });
+    
 } else {
     bot = new Telegram(TOKEN, {
         polling: true

@@ -170,26 +170,13 @@ bot.on('message', msg => {
             }
 
             let channel_id = msg.text;
-
-            switch (isAdminOfChannel(channel_id, user.user_id)) {
-                case Result.BOT_IS_NOT_ADMIN:
-                    bot.sendMessage(user.chat_id, templates.bot_is_not_admin);
-                    return;
-
-                case Result.USER_IS_NOT_ADMIN:
-                    bot.sendMessage(user.chat_id, templates.user_is_not_admin);
-                    return;
-
-                case true:
-                    break;
-            }
-
-            user.channel_id = channel_id;
-            user.status = Status.NONE;
-            updateUserInfoInFile(user);
-            mainMenu(chatId);
+            checkAdminDoFunc(channel_id, user.user_id, chatId, () => {
+                user.channel_id = channel_id;
+                user.status = Status.NONE;
+                updateUserInfoInFile(user);
+                mainMenu(chatId);
+            });
             break;
-
         case Status.NONE:
             if (!user.channel_id) {
                 bot.sendMessage(
@@ -213,6 +200,26 @@ bot.on('message', msg => {
             break;
     }
 });
+
+function checkAdminDoFunc(channel_id, user_id, chat_id, callback) {
+    isAdminOfChannel(channel_id, user_id).then(res => {
+        console.log(res);
+        switch (res) {
+            case Result.BOT_IS_NOT_ADMIN:
+                bot.sendMessage(chat_id, templates.bot_is_not_admin);
+                return;
+
+            case Result.USER_IS_NOT_ADMIN:
+                bot.sendMessage(chat_id, templates.user_is_not_admin);
+                return;
+
+            case true:
+                console.log('true');
+                callback();
+                return;
+        }
+    });
+}
 
 function sendNewPost(msg) {
     const chat_id = msg.chat.id;
@@ -356,18 +363,21 @@ function setLikeString(chat_id, entryMessageId) {
     }
 }
 function isAdminOfChannel(channel_id, admin_id) {
-    bot.getChatAdministrators(channel_id)
-        .then(msg => {
-            for (const usr of msg) {
-                if (usr.user.id === admin_id) {
-                    return true;
+    return new Promise((resolve, reject) => {
+        bot.getChatAdministrators(channel_id)
+            .then(msg => {
+                for (const usr of msg) {
+                    // console.log('admin id : ' + usr.user.id)
+                    if (usr.user.id === admin_id) {
+                        return resolve(true);
+                    }
                 }
-            }
-            return Result.USER_IS_NOT_ADMIN;
-        })
-        .catch(res => {
-            return Result.BOT_IS_NOT_ADMIN;
-        });
+                return resolve(Result.USER_IS_NOT_ADMIN);
+            })
+            .catch(res => {
+                return resolve(Result.BOT_IS_NOT_ADMIN);
+            });
+    });
 }
 
 function help(chat_id) {
@@ -376,27 +386,27 @@ function help(chat_id) {
 }
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
+    
+    checkAdminDoFunc(admin.channel_id, admin.user_id, admin.chat_id, () => {
+        const post = app.getPost(chat_id, message_id, admin.posts);
+        const form = forms.likeBtn(
+            `${admin.likeString} ${post.likes}`,
+            chat_id
+        );
+        const callback = msg => {
+            let postId = new PostID(admin.channel_id, msg.message_id);
+            post.ids.push(postId);
+        };
 
-    switch (isAdminOfChannel(admin.channel_id, admin.user_id)) {
-        case Result.BOT_IS_NOT_ADMIN:
-            bot.sendMessage(admin.chat_id, 'ابتدا ربات را ادیمن کانال کنید');
-            return;
+        sendAllTypesMessages(
+            admin.channel_id,
+            post.message,
+            form,
+            callback
+        );
 
-        case Result.USER_IS_NOT_ADMIN:
-            bot.sendMessage(admin.chat_id, 'شما ادمین کانال نیسیتید !');
-            return;
-    }
-
-    const post = app.getPost(chat_id, message_id, admin.posts);
-    const form = forms.likeBtn(`${admin.likeString} ${post.likes}`, chat_id);
-    const callback = msg => {
-        let postId = new PostID(admin.channel_id, msg.message_id);
-        post.ids.push(postId);
-    };
-
-    sendAllTypesMessages(admin.channel_id, post.message, form, callback);
-
-    updateUserInfoInFile(admin);
+        updateUserInfoInFile(admin);
+    });
 }
 
 function sendAllTypesMessages(chat_id, msg, form, callback) {

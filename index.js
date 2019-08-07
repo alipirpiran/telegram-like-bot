@@ -125,6 +125,9 @@ bot.onText(/\/cancel/, msg => {
     if (user.status === Status.SET_LIKE_STR)
         bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!').then(msg => mainMenu(chat_id));
 
+        if(user.status === Status.NONE)
+        bot.sendMessage(chat_id, 'چیزی برای انصراف وجود ندارد !!')
+
     user.status = Status.NONE;
     updateUserInfoInFile(user);
     

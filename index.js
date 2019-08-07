@@ -104,7 +104,7 @@ bot.onText(/\/start/, msg => {
     mainMenu(chatId);
 });
 
-bot.onText(/\/Cancel/, msg => {
+bot.onText(/\/cancel/, msg => {
     let chat_id = msg.chat.id;
     let name = msg.chat.first_name;
 
@@ -391,7 +391,7 @@ function setLikeString(chat_id, entryMessageId) {
     متن دکمه لایک را ارسال کنید
     برای مثال : 👍🏼
 
-    /Cancel :انصراف ✘
+    /cancel :انصراف ✘
 
 
 `;

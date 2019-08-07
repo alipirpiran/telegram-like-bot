@@ -12,9 +12,9 @@ const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
 const port = process.env.PORT || 3000;
 
-bot = new Telegram(TOKEN);
+
 let exp;
-let bot;
+let bot = new Telegram(TOKEN);;
 if (URL) {
     bot.setWebHook(URL + '/bot' + TOKEN);
     console.log('setting webhook : ' + URL + '/' + TOKEN);

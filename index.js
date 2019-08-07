@@ -142,11 +142,13 @@ bot.onText(/\/setting/, msg=>{
     }
     user.status = Status.NONE;
     updateUserInfoInFile(user);
-    
+
     mainMenu(msg.chat.id);
 })
 
 bot.on('message', msg => {
+    console.log(`Message | ${msg.from.first_name} : ${msg.chat.id}  type : ${app.getMessageType(msg)}`);
+    
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
@@ -219,7 +221,6 @@ bot.on('message', msg => {
 
 function checkAdminDoFunc(channel_id, user_id, chat_id, callback) {
     isAdminOfChannel(channel_id, user_id).then(res => {
-        console.log(res);
         switch (res) {
             case Result.BOT_IS_NOT_ADMIN:
                 bot.sendMessage(chat_id, templates.bot_is_not_admin);
@@ -230,7 +231,6 @@ function checkAdminDoFunc(channel_id, user_id, chat_id, callback) {
                 return;
 
             case true:
-                console.log('true');
                 callback();
                 return;
         }

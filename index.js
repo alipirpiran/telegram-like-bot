@@ -45,6 +45,11 @@ const Status = {
     SET_LIKE_STR: 'setlikestr'
 };
 
+const Result = {
+    USER_IS_NOT_ADMIN: 'userisnotadmin',
+    BOT_IS_NOT_ADMIN: 'botisnotadmin'
+};
+
 class PostID {
     constructor(chat_id, message_id) {
         this.chat_id = chat_id;
@@ -72,6 +77,7 @@ class User {
     constructor() {
         this.name = '';
         this.chat_id = '';
+        this.user_id = '';
         this.channel_id = '';
         this.status = Status.NONE;
         this.likeString = '❤️';
@@ -92,6 +98,7 @@ bot.onText(/\/start/, msg => {
         let user = new User();
         user.chat_id = chatId;
         user.name = name;
+        user.user_id = msg.from.id;
         addNewUser(user);
     }
 
@@ -108,6 +115,7 @@ bot.onText(/\/Cancel/, msg => {
         user = new User();
         user.chat_id = chat_id;
         user.name = name;
+        user.user_id = msg.from.id;
         addNewUser(user);
     }
 
@@ -128,8 +136,6 @@ bot.on('message', msg => {
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
 
-    // console.log(msg);
-
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
     }
@@ -139,6 +145,7 @@ bot.on('message', msg => {
         user = new User();
         user.chat_id = chatId;
         user.name = name;
+        user.user_id = msg.from.id;
         addNewUser(user);
     }
 
@@ -158,6 +165,17 @@ bot.on('message', msg => {
                 return;
             }
             let channel_id = msg.text;
+
+            switch (isAdminOfChannel(channel_id, user.user_id)) {
+                case Result.BOT_IS_NOT_ADMIN:
+                    bot.sendMessage(user.chat_id, templates.bot_is_not_admin);
+                    return;
+
+                case Result.USER_IS_NOT_ADMIN:
+                    bot.sendMessage(user.chat_id, templates.user_is_not_admin);
+                    return;
+            }
+
             user.channel_id = channel_id;
             user.status = Status.NONE;
             updateUserInfoInFile(user);
@@ -169,10 +187,13 @@ bot.on('message', msg => {
                 bot.sendMessage(
                     chatId,
                     '💬 شما هنوز کانال خود را ثبت نکرده اید ...'
-                );
-                setChannelId(chatId);
+                ).then(msg => {
+                    setChannelId(chatId);
+                });
+
                 break;
             }
+
             sendNewPost(msg);
             break;
 
@@ -326,14 +347,38 @@ function setLikeString(chat_id, entryMessageId) {
         bot.sendMessage(chat_id, message);
     }
 }
+function isAdminOfChannel(channel_id, admin_id) {
+    bot.getChatAdministrators('@alitestforbot')
+        .then(msg => {
+            for (const user of msg) {
+                if (user.user.id === admin_id) {
+                    return true;
+                }
+            }
+        })
+        .catch(res => {
+            return Result.BOT_IS_NOT_ADMIN;
+        });
+    return Result.USER_IS_NOT_ADMIN;
+}
 
 function help(chat_id) {
     const message = templates.help;
     bot.sendMessage(chat_id, message);
 }
-
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
+
+    switch (isAdminOfChannel(admin.channel_id, admin.user_id)) {
+        case Result.BOT_IS_NOT_ADMIN:
+            bot.sendMessage(admin.chat_id, 'ابتدا ربات را ادیمن کانال کنید');
+            return;
+
+        case Result.USER_IS_NOT_ADMIN:
+            bot.sendMessage(admin.chat_id, 'شما ادمین کانال نیسیتید !');
+            return;
+    }
+
     const post = app.getPost(chat_id, message_id, admin.posts);
     const form = forms.likeBtn(`${admin.likeString} ${post.likes}`, chat_id);
     const callback = msg => {
@@ -348,8 +393,6 @@ function sendPostToChannel(chat_id, message_id) {
 
 function sendAllTypesMessages(chat_id, msg, form, callback) {
     const caption = msg.caption;
-console.log(caption)
-    console.log(app.getMessageType(msg))
     switch (app.getMessageType(msg)) {
         case app.MessageType.TEXT:
             bot.sendMessage(chat_id, msg.text, {

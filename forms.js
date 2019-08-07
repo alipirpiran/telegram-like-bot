@@ -1,7 +1,7 @@
 
 
 
-export const callback_type = {
+exports.callback_type = {
     SET_CHANNEL : 'setchannel',
     LIKE : 'like',
     SEND : 'send',
@@ -9,7 +9,7 @@ export const callback_type = {
     MAIN_MENU : 'mainmenu',
     HELP : 'help'
 }
-export const mainMenu = (user) => {
+exports.mainMenu = (user) => {
     // complete the data 
     let calback = JSON.stringify(createCallBackData(callback_type.SET_CHANNEL, 'data tha i added !'));
     let callback_like = JSON.stringify(createCallBackData(callback_type.LIKE_SET, ''));
@@ -24,7 +24,7 @@ export const mainMenu = (user) => {
     }
 }
 
-export const sendPost = (likeString) => {
+exports.sendPost = (likeString) => {
     // complete the data 
     let calback = JSON.stringify(createCallBackData('', 'liked !'))
     let sendCallBack = JSON.stringify(createCallBackData(callback_type.SEND, 'dont know'));
@@ -39,7 +39,7 @@ export const sendPost = (likeString) => {
     }
 }
 
-export const likeBtn = (likeString, adminChatId) => {
+exports.likeBtn = (likeString, adminChatId) => {
     let calback = JSON.stringify(createCallBackData(callback_type.LIKE, adminChatId))
     return {
         inline_keyboard: [

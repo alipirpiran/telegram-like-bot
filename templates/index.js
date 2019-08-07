@@ -1,4 +1,4 @@
-export const mainMenu = (name, channelName) => {
+exports.mainMenu = (name, channelName) => {
     return `
 🔸 کاربر  : ${name ? name : 'ثبت نشده'}
 
@@ -6,7 +6,7 @@ export const mainMenu = (name, channelName) => {
 `
 }
 
-export const setChannel = () => {
+exports.setChannel = () => {
     return `
     🔸 بسیار خب
     👈 در صورتی که @likeposterbot را ادمین کانال خود قرار داده‌اید، نام کاربری کانال خود را در قالب @channelusername ارسال کنید:
@@ -15,7 +15,7 @@ export const setChannel = () => {
     `
 }
 
-export const help = 
+exports.help = 
 `
 🔸 با استفاده از دکمه ثبت ایدی کانال خود را ثبت کنید.
 

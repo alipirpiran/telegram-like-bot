@@ -1,4 +1,4 @@
-export const getUser = (chatId, users) => {
+exports.getUser = (chatId, users) => {
 for (const item of users) {
     if(item.chat_id === chatId)
     return item;
@@ -7,7 +7,7 @@ for (const item of users) {
 return null;
 }
 
-export const MessageType = {
+exports.MessageType = {
     TEXT : 'text',
     PHOTO : 'photo',
     voice : 'voice',
@@ -16,7 +16,7 @@ export const MessageType = {
 
 }
 
-export const getMessageType = (msg) => {
+exports.getMessageType = (msg) => {
     if(msg.text)
         return MessageType.TEXT;
     if(msg.photo)
@@ -31,7 +31,7 @@ export const getMessageType = (msg) => {
 
 }
 
-export const getPost = (chid, id, posts) => {
+exports.getPost = (chid, id, posts) => {
     for (const post of posts) {
         for (const {chat_id, message_id} of post.ids) {
             if (message_id === id && chat_id === chid) {

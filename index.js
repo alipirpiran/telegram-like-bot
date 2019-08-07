@@ -131,6 +131,18 @@ bot.onText(/\/Cancel/, msg => {
 });
 
 bot.onText(/\/setting/, msg=>{
+    let user = app.getUser(chat_id, users);
+    if (!user) {
+        console.log('new user');
+        user = new User();
+        user.chat_id = chat_id;
+        user.name = name;
+        user.user_id = msg.from.id;
+        addNewUser(user);
+    }
+    user.status = Status.NONE;
+    updateUserInfoInFile(user);
+    
     mainMenu(msg.chat.id);
 })
 

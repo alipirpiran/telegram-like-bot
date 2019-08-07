@@ -9,22 +9,21 @@ const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
 
 let bot;
-if(URL){
+if (URL) {
     bot = new Telegram(TOKEN, {
-        webHook :{
-            port : 443
+        webHook: {
+            port: 443
         }
     });
     bot.setWebHook(URL + '/' + TOKEN);
-    console.log('setting webhook : ' + URL + '/' + TOKEN)
-}else{
+    console.log('setting webhook : ' + URL + '/' + TOKEN);
+} else {
     bot = new Telegram(TOKEN, {
         polling: true
     });
 
-    console.log('setting polling')
+    console.log('setting polling');
 }
-
 
 const Status = {
     ADD_CHANNEL: 'addchannel',
@@ -68,7 +67,7 @@ class User {
     }
 }
 
-// setAllUsers();
+setAllUsers();
 let users = new Set();
 
 bot.onText(/\/start/, msg => {
@@ -87,17 +86,27 @@ bot.onText(/\/start/, msg => {
 
 bot.onText(/\/Cancel/, msg => {
     let chat_id = msg.chat.id;
-    const user = app.getUser(chat_id, users);
+    let name = msg.chat.first_name;
+
+    let user = app.getUser(chat_id, users);
+    if (!user) {
+        console.log('new user');
+        user = new User();
+        user.chat_id = chat_id;
+        user.name = name;
+        addNewUser(user);
+    }
 
     updateUserInfoInFile(user);
     if (user.status === Status.ADD_CHANNEL)
         bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!');
 
-        if(user.status === Status.SET_LIKE_STR)
+    if (user.status === Status.SET_LIKE_STR)
         bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!');
+
     user.status = Status.NONE;
 
-    mainMenu(chat_id)
+    mainMenu(chat_id);
 });
 
 bot.on('message', msg => {
@@ -105,7 +114,7 @@ bot.on('message', msg => {
     let name = msg.chat.first_name;
     let user = app.getUser(chatId, users);
 
-    console.log(msg);
+    // console.log(msg);
 
     if (msg.text) {
         if (msg.text.charAt(0) === '/') return;
@@ -121,18 +130,17 @@ bot.on('message', msg => {
 
     switch (user.status) {
         case Status.ADD_CHANNEL:
-            if(!msg.text){
+            if (!msg.text) {
                 bot.sendMessage(chatId, 'ایدی کانال را ارسال کنید');
                 return;
             }
-            if(msg.text.charAt(0) !== '@'){
-                const message = 
-                `
+            if (msg.text.charAt(0) !== '@') {
+                const message = `
 🔻  ایدی کانال باید با @ شروع شود !
 
 🔸 دوباره ارسال کنید : 
-                `
-                bot.sendMessage(chatId, message)
+                `;
+                bot.sendMessage(chatId, message);
                 return;
             }
             let channel_id = msg.text;
@@ -295,6 +303,8 @@ function setLikeString(chat_id, entryMessageId) {
     متن دکمه لایک را ارسال کنید
     برای مثال : 👍🏼
 
+    /Cancel :انصراف ✘
+
 
 `;
     if (entryMessageId) {
@@ -369,6 +379,7 @@ function setAllUsers() {
             return;
         }
         for (const fileName of files) {
+            if (fileName.charAt(0) === '.') continue;
             fs.readFile('users/' + fileName, (err, data) => {
                 if (err) {
                     // console.log(err);

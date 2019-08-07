@@ -11,9 +11,11 @@ exports.callback_type = {
 }
 exports.mainMenu = (user) => {
     // complete the data 
-    let calback = JSON.stringify(createCallBackData(callback_type.SET_CHANNEL, 'data tha i added !'));
-    let callback_like = JSON.stringify(createCallBackData(callback_type.LIKE_SET, ''));
-    let callback_help = JSON.stringify(createCallBackData(callback_type.HELP, ''));
+    console.log(user)
+    
+    let calback = JSON.stringify(createCallBackData(this.callback_type.SET_CHANNEL, 'data tha i added !'));
+    let callback_like = JSON.stringify(createCallBackData(this.callback_type.LIKE_SET, ''));
+    let callback_help = JSON.stringify(createCallBackData(this.callback_type.HELP, ''));
 
     return {
         inline_keyboard: [
@@ -27,8 +29,8 @@ exports.mainMenu = (user) => {
 exports.sendPost = (likeString) => {
     // complete the data 
     let calback = JSON.stringify(createCallBackData('', 'liked !'))
-    let sendCallBack = JSON.stringify(createCallBackData(callback_type.SEND, 'dont know'));
-    let calback_mainmenu = JSON.stringify(createCallBackData(callback_type.MAIN_MENU, ''))
+    let sendCallBack = JSON.stringify(createCallBackData(this.callback_type.SEND, 'dont know'));
+    let calback_mainmenu = JSON.stringify(createCallBackData(this.callback_type.MAIN_MENU, ''))
 
     return {
         inline_keyboard: [
@@ -40,7 +42,7 @@ exports.sendPost = (likeString) => {
 }
 
 exports.likeBtn = (likeString, adminChatId) => {
-    let calback = JSON.stringify(createCallBackData(callback_type.LIKE, adminChatId))
+    let calback = JSON.stringify(createCallBackData(this.callback_type.LIKE, adminChatId))
     return {
         inline_keyboard: [
             [createButton(likeString, calback)]

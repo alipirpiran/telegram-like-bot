@@ -332,7 +332,7 @@ function changeLikes(post, user_id, val, adminChatId, callback) {
     );
 
     const botForm = message_id => {
-        return forms.sentPost(`${admin.likeString} ${post.likes}`, 'google.com', message_id);
+        return forms.sentPost(`${admin.likeString} ${post.likes}`, admin.channel_id, message_id);
     };
 
     for (const { chat_id, message_id } of post.ids) {
@@ -344,7 +344,6 @@ function changeLikes(post, user_id, val, adminChatId, callback) {
                 callback();
             });
         else {
-            console.log(botForm(message_id))
             bot.editMessageReplyMarkup(botForm(message_id), {
                 chat_id,
                 message_id

@@ -174,9 +174,9 @@ bot.onText(/\/help/, msg => {
 
 bot.on('message', msg => {
     console.log(
-        `Message | ${msg.from.first_name} : ${
+        `Message | ${msg.from.first_name}:${
             msg.chat.id
-        }  type : ${app.getMessageType(msg)}`
+        }  type : ${app.getMessageType(msg)} content : ${msg.text || ''}` 
     );
 
     const chatId = msg.chat.id;
@@ -387,7 +387,6 @@ bot.on('callback_query', msg => {
     const message_id = msg.message.message_id;
     const data = JSON.parse(msg.data);
     const admin = app.getUser(chat_id, users);
-    // console.log(msg)
 
     switch (data.type) {
         case forms.callback_type.SET_CHANNEL:
@@ -416,10 +415,6 @@ bot.on('callback_query', msg => {
             break;
 
         case forms.callback_type.DELET_POST:
-            // for (const pid of admin.posts) {
-            //     console.log(pid.ids)
-            // }
-            // const post = app.getPost(admin.channel_id, data.data, admin.posts)
             deletePost(admin.channel_id, data.data, admin, msg.id);
             break;
     }
@@ -436,7 +431,7 @@ function deletePost(chat_id, message_id, admin, callback_query_id) {
                 text: 'پست پاک شد !'
                 // show_alert : true
             }).then(msg => {
-                console.log(msg);
+                
             });
             for (const pid of app.getPost(chat_id, message_id, admin.posts)
                 .ids) {

@@ -12,9 +12,8 @@ const URL = process.env.URL;
 const TOKEN = process.env.TOKEN;
 const port = process.env.PORT || 3000;
 
-
 let exp;
-let bot = new Telegram(TOKEN);;
+let bot = new Telegram(TOKEN);
 if (URL) {
     bot.setWebHook(URL + '/bot' + TOKEN);
     console.log('setting webhook : ' + URL + '/' + TOKEN);
@@ -118,22 +117,24 @@ bot.onText(/\/cancel/, msg => {
         addNewUser(user);
     }
 
-    
     if (user.status === Status.ADD_CHANNEL)
-        bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!').then(msg => mainMenu(chat_id));
+        bot.sendMessage(chat_id, '✘ ثبت کانال لغو شد!').then(msg =>
+            mainMenu(chat_id)
+        );
 
     if (user.status === Status.SET_LIKE_STR)
-        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!').then(msg => mainMenu(chat_id));
+        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!').then(msg =>
+            mainMenu(chat_id)
+        );
 
-        if(user.status === Status.NONE)
-        bot.sendMessage(chat_id, 'چیزی برای انصراف وجود ندارد !!')
+    if (user.status === Status.NONE)
+        bot.sendMessage(chat_id, 'چیزی برای انصراف وجود ندارد !!');
 
     user.status = Status.NONE;
     updateUserInfoInFile(user);
-    
 });
 
-bot.onText(/\/setting/, msg=>{
+bot.onText(/\/setting/, msg => {
     let chat_id = msg.chat.id;
     let name = msg.chat.first_name;
 
@@ -150,9 +151,9 @@ bot.onText(/\/setting/, msg=>{
     updateUserInfoInFile(user);
 
     mainMenu(msg.chat.id);
-})
+});
 
-bot.onText(/\/help/, msg=>{
+bot.onText(/\/help/, msg => {
     let chat_id = msg.chat.id;
     let name = msg.chat.first_name;
 
@@ -169,10 +170,14 @@ bot.onText(/\/help/, msg=>{
     updateUserInfoInFile(user);
 
     bot.sendMessage(chat_id, templates.help);
-})
+});
 
 bot.on('message', msg => {
-    console.log(`Message | ${msg.from.first_name} : ${msg.chat.id}  type : ${app.getMessageType(msg)}`);
+    console.log(
+        `Message | ${msg.from.first_name} : ${
+            msg.chat.id
+        }  type : ${app.getMessageType(msg)}`
+    );
 
     const chatId = msg.chat.id;
     let name = msg.chat.first_name;
@@ -283,7 +288,7 @@ function addNewPostToUser(chat_id, msg) {
     admin.posts.push(post);
 }
 
-function likePost(chat_id, message_id, user_id) {
+function likePost(chat_id, message_id, user_id, callback_query_id) {
     const admin = app.getUser(chat_id, users);
     const post = app.getPost(admin.channel_id, message_id, admin.posts);
 
@@ -293,14 +298,24 @@ function likePost(chat_id, message_id, user_id) {
 
     for (const user of post.membersWhoLikes) {
         if (user === user_id) {
-            changeLikes(post, user_id, -1, chat_id);
+            changeLikes(post, user_id, -1, chat_id, () => {
+                bot.answerCallbackQuery({
+                    callback_query_id,
+                    text: 'رای شما پس گرفته شد !'
+                });
+            });
             return;
         }
     }
-    changeLikes(post, user_id, +1, chat_id);
+    changeLikes(post, user_id, +1, chat_id, () => {
+        bot.answerCallbackQuery({
+            callback_query_id,
+            text: 'رای شما ثبت شد !'
+        });
+    });
 }
 
-function changeLikes(post, user_id, val, adminChatId) {
+function changeLikes(post, user_id, val, adminChatId, callback) {
     const admin = app.getUser(adminChatId, users);
 
     if (val === 1) {
@@ -311,16 +326,32 @@ function changeLikes(post, user_id, val, adminChatId) {
         post.likes--;
     }
 
-    const form = forms.likeBtn(
+    const channelForm = forms.likeBtn(
         `${admin.likeString} ${post.likes}`,
         adminChatId
     );
 
+    const botForm = message_id => {
+        return forms.sentPost(`${admin.likeString} ${post.likes}`, 'google.com', message_id);
+    };
+
     for (const { chat_id, message_id } of post.ids) {
-        bot.editMessageReplyMarkup(form, {
-            chat_id,
-            message_id
-        });
+        if (chat_id == admin.channel_id)
+            bot.editMessageReplyMarkup(channelForm, {
+                chat_id,
+                message_id
+            }).then(msg => {
+                callback();
+            });
+        else {
+            console.log(botForm(message_id))
+            bot.editMessageReplyMarkup(botForm(message_id), {
+                chat_id,
+                message_id
+            }).then(msg => {
+                callback();
+            });
+        }
     }
     updateUserInfoInFile(app.getUser(adminChatId, users));
 }
@@ -355,6 +386,8 @@ bot.on('callback_query', msg => {
     const chat_id = msg.message.chat.id;
     const message_id = msg.message.message_id;
     const data = JSON.parse(msg.data);
+    const admin = app.getUser(chat_id, users);
+    // console.log(msg)
 
     switch (data.type) {
         case forms.callback_type.SET_CHANNEL:
@@ -363,7 +396,7 @@ bot.on('callback_query', msg => {
 
         case forms.callback_type.LIKE:
             // data.data is the chat id of admin
-            likePost(data.data, message_id, msg.from.id);
+            likePost(data.data, message_id, msg.from.id, msg.id);
             break;
 
         case forms.callback_type.SEND:
@@ -381,10 +414,52 @@ bot.on('callback_query', msg => {
         case forms.callback_type.HELP:
             help(chat_id);
             break;
+
+        case forms.callback_type.DELET_POST:
+            // for (const pid of admin.posts) {
+            //     console.log(pid.ids)
+            // }
+            // const post = app.getPost(admin.channel_id, data.data, admin.posts)
+            deletePost(admin.channel_id, data.data, admin, msg.id);
+            break;
     }
 
+    if(data.data === 'disable')
     bot.answerCallbackQuery(msg.id);
 });
+
+function deletePost(chat_id, message_id, admin, callback_query_id) {
+    bot.deleteMessage(chat_id, message_id)
+        .then(msg => {
+            bot.answerCallbackQuery({
+                callback_query_id,
+                text: 'پست پاک شد !'
+                // show_alert : true
+            }).then(msg => {
+                console.log(msg);
+            });
+            for (const pid of app.getPost(chat_id, message_id, admin.posts)
+                .ids) {
+                if (pid.chat_id == admin.chat_id) {
+                    bot.editMessageReplyMarkup(
+                        forms.sentPost(admin.likeString, '', message_id),
+                        {
+                            chat_id: pid.chat_id,
+                            message_id: pid.message_id
+                        }
+                    );
+                    break;
+                }
+            }
+        })
+        .catch(res => {
+            bot.answerCallbackQuery({
+                callback_query_id,
+                text: 'پست قبلا پاک شده !'
+                // show_alert : true
+            });
+        });
+}
 
 function setLikeString(chat_id, entryMessageId) {
     const user = app.getUser(chat_id, users);
@@ -427,7 +502,7 @@ function help(chat_id) {
 }
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
-    
+
     checkAdminDoFunc(admin.channel_id, admin.user_id, admin.chat_id, () => {
         const post = app.getPost(chat_id, message_id, admin.posts);
         const form = forms.likeBtn(
@@ -437,14 +512,19 @@ function sendPostToChannel(chat_id, message_id) {
         const callback = msg => {
             let postId = new PostID(admin.channel_id, msg.message_id);
             post.ids.push(postId);
+
+            updateUserInfoInFile(admin);
+
+            bot.editMessageReplyMarkup(
+                forms.sentPost(admin.likeString, admin.channel_id, msg.message_id),
+                {
+                    chat_id: admin.chat_id,
+                    message_id
+                }
+            );
         };
 
-        sendAllTypesMessages(
-            admin.channel_id,
-            post.message,
-            form,
-            callback
-        );
+        sendAllTypesMessages(admin.channel_id, post.message, form, callback);
 
         updateUserInfoInFile(admin);
     });

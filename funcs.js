@@ -35,10 +35,11 @@ exports.getMessageType = (msg) => {
 exports.getPost = (chid, id, posts) => {
     for (const post of posts) {
         for (const {chat_id, message_id} of post.ids) {
-            if (message_id === id && chat_id === chid) {
+            if (message_id == id && chat_id === chid) {
                 return post;
             }
         }
     }
+
     return null;
 }

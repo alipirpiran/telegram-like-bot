@@ -9,10 +9,13 @@ simple telegram bot to add like button under posts
 <br>
 <i > TOKEN=YOUR_BOT_TOKEN</i>
 </li>
-
-<li>run index.js <br>
-    <i>node -r esm index.js</i>
-
+  
+  <li>use webhook<br>
+<i>.env file structure</i>
+<br>
+    <i > TOKEN=YOUR_BOT_TOKEN</i><br>
+    <i > URL=YOUR_URL</i><br>
+    <i > PORT=YOUR_PORT</i><br>
 </li>
 
 </ul>

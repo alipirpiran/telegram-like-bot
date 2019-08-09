@@ -336,15 +336,16 @@ function changeLikes(post, user_id, val, adminChatId, callback) {
     };
 
     for (const { chat_id, message_id } of post.ids) {
-        if (chat_id == admin.channel_id)
+        if (chat_id == admin.channel_id){
             bot.editMessageReplyMarkup(channelForm, {
                 chat_id,
                 message_id
             }).then(msg => {
                 callback();
             });
+        }
         else {
-            bot.editMessageReplyMarkup(botForm(message_id), {
+            bot.editMessageReplyMarkup(botForm(post.message.message_id), {
                 chat_id,
                 message_id
             }).then(msg => {
@@ -511,6 +512,7 @@ function sendPostToChannel(chat_id, message_id) {
         const callback = msg => {
             let postId = new PostID(admin.channel_id, msg.message_id);
             post.ids.push(postId);
+            post.message = msg;
 
             updateUserInfoInFile(admin);
 

@@ -4,15 +4,15 @@ simple telegram bot to add like button under posts
 
 <h3>telegram like bot setup</h3>
 <h4>create .env file in main project dir</h4>
-<ul>
-<li>use polling<br>
 <i>.env file structure</i>
+<ul>
+<li>use polling :<br>
 <br>
 <i > TOKEN=YOUR_BOT_TOKEN</i>
 </li>
   
-  <li>use webhook<br>
-<i>.env file structure</i>
+  <li>use webhook :<br>
+
 <br>
     <i > TOKEN=YOUR_BOT_TOKEN</i><br>
     <i > URL=YOUR_URL</i><br>

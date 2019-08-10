@@ -35,8 +35,8 @@ exports.getMessageType = (msg) => {
 exports.getPost = (chid, id, posts) => {
     for (const post of posts) {
         for (const {chat_id, message_id} of post.ids) {
-            console.log(chid, id);
-            console.log(chat_id, message_id)
+            // console.log(chid, id);
+            // console.log(chat_id, message_id)
             if (message_id == id && chat_id === chid) {
                 return post;
             }

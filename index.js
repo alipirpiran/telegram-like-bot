@@ -40,7 +40,8 @@ if (URL) {
 const Status = {
     ADD_CHANNEL: 'addchannel',
     NONE: 'none',
-    SET_LIKE_STR: 'setlikestr'
+    SET_LIKE_STR: 'setlikestr',
+    SET_POST_LIKE_STR: 'setpostlikeString'
 };
 
 const Result = {
@@ -66,6 +67,7 @@ class Post {
         this.membersWhoLikes = [];
 
         this.likes = 0;
+        this.likeString = '❤️';
         this.type = '';
         this.message;
     }
@@ -79,6 +81,7 @@ class User {
         this.channel_id = '';
         this.status = Status.NONE;
         this.likeString = '❤️';
+        this.edittingPost = undefined;
 
         // post message_id
         this.posts = [];
@@ -130,6 +133,9 @@ bot.onText(/\/cancel/, msg => {
     if (user.status === Status.NONE)
         bot.sendMessage(chat_id, 'چیزی برای انصراف وجود ندارد !!');
 
+    if (user.status === Status.SET_POST_LIKE_STR)
+        bot.sendMessage(chat_id, '✘ تنظیم دکمه لایک لغو شد!');
+
     user.status = Status.NONE;
     updateUserInfoInFile(user);
 });
@@ -176,7 +182,7 @@ bot.on('message', msg => {
     console.log(
         `Message | ${msg.from.first_name}:${
             msg.chat.id
-        }  type : ${app.getMessageType(msg)} content : ${msg.text || ''}` 
+        }  type : ${app.getMessageType(msg)} content : ${msg.text || ''}`
     );
 
     const chatId = msg.chat.id;
@@ -246,6 +252,20 @@ bot.on('message', msg => {
             updateUserInfoInFile(user);
             mainMenu(user.chat_id);
             break;
+
+        case Status.SET_POST_LIKE_STR:
+            if (!msg.text) {
+                bot.sendMessage(chatId, 'به صورت متن ارسال کنید !');
+                return;
+            }
+            let post = app.getPost(chatId, user.edittingPostId, user.posts);
+        
+            post.likeString = msg.text;
+            user.status = Status.NONE;
+            updateUserInfoInFile(user);
+            setSendMenu(chatId, user.edittingPostId);
+            bot.sendMessage(chatId, ' ✅ گزینه لایک ثبت شد')
+            break;
     }
 });
 
@@ -267,17 +287,6 @@ function checkAdminDoFunc(channel_id, user_id, chat_id, callback) {
     });
 }
 
-function sendNewPost(msg) {
-    const chat_id = msg.chat.id;
-    const admin = app.getUser(chat_id, users);
-    let form = forms.sendPost(admin.likeString);
-    const callback = msg => {
-        addNewPostToUser(chat_id, msg);
-    };
-
-    sendAllTypesMessages(chat_id, msg, form, callback);
-}
-
 function addNewPostToUser(chat_id, msg) {
     let admin = app.getUser(chat_id, users);
     let post = new Post();
@@ -285,7 +294,10 @@ function addNewPostToUser(chat_id, msg) {
     post.ids.push(postId);
     post.type = app.getMessageType(msg);
     post.message = msg;
+    post.likeString = admin.likeString;
     admin.posts.push(post);
+
+    updateUserInfoInFile(admin);
 }
 
 function likePost(chat_id, message_id, user_id, callback_query_id) {
@@ -317,6 +329,7 @@ function likePost(chat_id, message_id, user_id, callback_query_id) {
 
 function changeLikes(post, user_id, val, adminChatId, callback) {
     const admin = app.getUser(adminChatId, users);
+    const likeString = post.likeString || admin.likeString;
 
     if (val === 1) {
         post.membersWhoLikes.push(user_id);
@@ -327,24 +340,27 @@ function changeLikes(post, user_id, val, adminChatId, callback) {
     }
 
     const channelForm = forms.likeBtn(
-        `${admin.likeString} ${post.likes}`,
+        `${likeString} ${post.likes == 0 ? '' : post.likes}`,
         adminChatId
     );
 
     const botForm = message_id => {
-        return forms.sentPost(`${admin.likeString} ${post.likes}`, admin.channel_id, message_id);
+        return forms.sentPost(
+            `${likeString} ${post.likes == 0 ? '' : post.likes}`,
+            admin.channel_id,
+            message_id
+        );
     };
 
     for (const { chat_id, message_id } of post.ids) {
-        if (chat_id == admin.channel_id){
+        if (chat_id == admin.channel_id) {
             bot.editMessageReplyMarkup(channelForm, {
                 chat_id,
                 message_id
             }).then(msg => {
                 callback();
             });
-        }
-        else {
+        } else {
             bot.editMessageReplyMarkup(botForm(post.message.message_id), {
                 chat_id,
                 message_id
@@ -417,11 +433,77 @@ bot.on('callback_query', msg => {
         case forms.callback_type.DELET_POST:
             deletePost(admin.channel_id, data.data, admin, msg.id);
             break;
+
+        case forms.callback_type.SET_POST_LIKE:
+            showSetPostLike(chat_id, message_id);
+            break;
+
+        case forms.callback_type.SEND_MENU:
+            setSendMenu(chat_id, message_id);
+            break;
+
+        case forms.callback_type.SETED_POST_LIKE:
+            setPostLike(chat_id, message_id, data.data).then(() => {
+                bot.answerCallbackQuery(msg.id);
+                setSendMenu(chat_id, message_id);
+            });
+            break;
+
+        case forms.callback_type.NEW_POST_LIKE:
+            setNewPostLike(chat_id, message_id).then(() => {
+                bot.answerCallbackQuery(msg.id);
+            });
+            break;
     }
 
-    if(data.data === 'disable')
-    bot.answerCallbackQuery(msg.id);
+    if (data.data === 'disable') bot.answerCallbackQuery(msg.id);
 });
+
+function setSendMenu(chat_id, message_id) {
+    const admin = app.getUser(chat_id, users);
+    let post = app.getPost(chat_id, message_id, admin.posts);
+    let form = forms.sendPost(post.likeString);
+
+    bot.editMessageReplyMarkup(form, {
+        chat_id,
+        message_id
+    }).then(msg => {
+        return new Promise((res, rej) => {
+            res(msg);
+        });
+    });
+}
+
+function showSetPostLike(chat_id, message_id) {
+    let form = forms.likeStringsForPost();
+    bot.editMessageReplyMarkup(form, {
+        message_id,
+        chat_id
+    });
+}
+
+function setNewPostLike(chat_id, message_id) {
+    const admin = app.getUser(chat_id, users);
+    let message = templates.set_post_like;
+    bot.sendMessage(chat_id, message);
+    admin.status = Status.SET_POST_LIKE_STR;
+    admin.edittingPostId = message_id;
+
+    return new Promise((res, rej) => {
+        res();
+    });
+}
+
+function setPostLike(chat_id, message_id, likeString) {
+    const admin = app.getUser(chat_id, users);
+    let post = app.getPost(chat_id, message_id, admin.posts);
+    post.likeString = likeString;
+    updateUserInfoInFile(admin);
+
+    return new Promise((res, rej) => {
+        res();
+    });
+}
 
 function deletePost(chat_id, message_id, admin, callback_query_id) {
     bot.deleteMessage(chat_id, message_id)
@@ -430,9 +512,7 @@ function deletePost(chat_id, message_id, admin, callback_query_id) {
                 callback_query_id,
                 text: 'پست پاک شد !'
                 // show_alert : true
-            }).then(msg => {
-                
-            });
+            }).then(msg => {});
             for (const pid of app.getPost(chat_id, message_id, admin.posts)
                 .ids) {
                 if (pid.chat_id == admin.chat_id) {
@@ -495,13 +575,24 @@ function help(chat_id) {
     const message = templates.help;
     bot.sendMessage(chat_id, message);
 }
+function sendNewPost(msg) {
+    const chat_id = msg.chat.id;
+    const admin = app.getUser(chat_id, users);
+    let form = forms.sendPost(admin.likeString);
+    const callback = msg => {
+        addNewPostToUser(chat_id, msg);
+    };
+
+    sendAllTypesMessages(chat_id, msg, form, callback);
+}
+
 function sendPostToChannel(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);
 
     checkAdminDoFunc(admin.channel_id, admin.user_id, admin.chat_id, () => {
         const post = app.getPost(chat_id, message_id, admin.posts);
         const form = forms.likeBtn(
-            `${admin.likeString} ${post.likes}`,
+            `${post.likeString} ${post.likes == 0 ? '' : post.likes}`,
             chat_id
         );
         const callback = msg => {
@@ -512,7 +603,11 @@ function sendPostToChannel(chat_id, message_id) {
             updateUserInfoInFile(admin);
 
             bot.editMessageReplyMarkup(
-                forms.sentPost(admin.likeString, admin.channel_id, msg.message_id),
+                forms.sentPost(
+                    post.likeString,
+                    admin.channel_id,
+                    msg.message_id
+                ),
                 {
                     chat_id: admin.chat_id,
                     message_id

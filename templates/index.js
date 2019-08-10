@@ -35,3 +35,11 @@ exports.user_is_not_admin =
     شما ادمین کانال تیستید
 `
 
+exports.set_post_like = 
+`
+متن گزینه لایک را ارسال کنید : 
+
+/cancel :انصراف ✘
+
+`
+

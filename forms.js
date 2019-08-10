@@ -6,7 +6,11 @@ exports.callback_type = {
     MAIN_MENU: 'mainmenu',
     HELP: 'help',
     DELET_POST: 'deletepost',
-    SEE_POST: 'seepost'
+    SEE_POST: 'seepost',
+    SET_POST_LIKE : 'setpostlike',
+    NEW_POST_LIKE : 'newpostlikeString',
+    SETED_POST_LIKE : 'setedpostlike',
+    SEND_MENU : 'sendmenu'
 };
 exports.mainMenu = user => {
     let calback = JSON.stringify(
@@ -28,7 +32,7 @@ exports.mainMenu = user => {
                 )
             ],
             [
-                createButton(`[${user.likeString}] تنظیم دکمه لایک`, {
+                createButton(`[${user.likeString}] لایک پیشفرض`, {
                     callback_data: callback_like
                 })
             ],
@@ -37,10 +41,10 @@ exports.mainMenu = user => {
     };
 };
 
-exports.sendPost = likeString => {
+exports.sendPost = (likeString) => {
     // complete the data
     let calback = JSON.stringify(
-        createCallBackData('', { callback_data: 'disable' })
+        createCallBackData(this.callback_type.SET_POST_LIKE, { callback_data: '' })
     );
     let sendCallBack = JSON.stringify(
         createCallBackData(this.callback_type.SEND, {
@@ -106,6 +110,43 @@ exports.likeBtn = (likeString, adminChatId) => {
         ]
     };
 };
+
+exports.likeStringsForPost = () => {
+    let likeStrings = [
+        ['❤', '️🧡', '💛', '💚', '💙', '💜'],
+        ['👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '🏿'],
+        ['😀', '😃', '😄', '😁', '😆', '😂']
+    ]
+
+    let btns = [];
+
+    for (let index = 0; index < likeStrings.length; index++) {
+        let rowBtns = [];
+        const element = likeStrings[index];
+        for (let j = 0; j < element.length; j++) {
+            const str = element[j];
+
+            let calback = JSON.stringify(
+                createCallBackData(this.callback_type.SETED_POST_LIKE, str)
+            );
+
+            rowBtns.push(createButton(str, {callback_data : calback}))
+        }
+        btns.push(rowBtns);
+    }
+
+    let cl1 = JSON.stringify(createCallBackData(this.callback_type.SEND_MENU, ''));
+    let cl2 = JSON.stringify(createCallBackData(this.callback_type.NEW_POST_LIKE, ''));
+
+    btns.push([
+        createButton('بازگشت', {callback_data : cl1}),
+        createButton('مورد دیگر', {callback_data : cl2})
+    ])
+
+    return {
+        inline_keyboard: btns
+    }
+}
 
 function createButton(text, data) {
     let { url, callback_data } = data;

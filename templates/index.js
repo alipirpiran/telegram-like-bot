@@ -35,6 +35,13 @@ exports.user_is_not_admin =
     شما ادمین کانال تیستید
 `
 
+exports.account_is_not_premium = 
+`
+اکانت شما این قابلیت را ندارد.
+جهت ارتقا اکانت به اکانت طلایی با ادمین ارتباط برقرار کنید.
+ایدی : @mralpr
+`
+
 exports.set_post_like = 
 `
 متن گزینه لایک را ارسال کنید : 

@@ -10,7 +10,8 @@ exports.callback_type = {
     SET_POST_LIKE : 'setpostlike',
     NEW_POST_LIKE : 'newpostlikeString',
     SETED_POST_LIKE : 'setedpostlike',
-    SEND_MENU : 'sendmenu'
+    SEND_MENU : 'sendmenu',
+    LIKERS_LIST: 'likerlist'
 };
 exports.mainMenu = user => {
     let calback = JSON.stringify(
@@ -64,7 +65,7 @@ exports.sendPost = (likeString) => {
     };
 };
 
-exports.sentPost = (likeString, channel_id, messageId) => {
+exports.sentPost = (likeString, channel_id, messageId, activeUser) => {
     let calback = JSON.stringify(createCallBackData('', 'disable'));
     let sendCallBack = JSON.stringify(
         createCallBackData(this.callback_type.SEND, 'dont know')
@@ -75,6 +76,10 @@ exports.sentPost = (likeString, channel_id, messageId) => {
     let calback_mainmenu = JSON.stringify(
         createCallBackData(this.callback_type.MAIN_MENU, '')
     );
+
+    let callback_likers = JSON.stringify(
+        createCallBackData(this.callback_type.LIKERS_LIST)
+    )
 
     if(String(channel_id).charAt(0) === '@')
         channel_id = String(channel_id).split('@')[1];
@@ -94,6 +99,9 @@ exports.sentPost = (likeString, channel_id, messageId) => {
                     callback_data: deletCallBack
                 }),
                 createButton('ارسال مجدد', { callback_data: sendCallBack })
+            ],
+            [
+                createButton(`${activeUser?"افراد نظر داده":"🔐 افراد نظر داده"}`, {callback_data: callback_likers})
             ],
             [createButton('منو اصلی', { callback_data: calback_mainmenu })]
         ]
@@ -147,6 +155,7 @@ exports.likeStringsForPost = () => {
         inline_keyboard: btns
     }
 }
+
 
 function createButton(text, data) {
     let { url, callback_data } = data;

@@ -259,12 +259,12 @@ bot.on('message', msg => {
                 return;
             }
             let post = app.getPost(chatId, user.edittingPostId, user.posts);
-        
+
             post.likeString = msg.text;
             user.status = Status.NONE;
             updateUserInfoInFile(user);
             setSendMenu(chatId, user.edittingPostId);
-            bot.sendMessage(chatId, ' ✅ گزینه لایک ثبت شد')
+            bot.sendMessage(chatId, ' ✅ گزینه لایک ثبت شد');
             break;
     }
 });
@@ -300,7 +300,7 @@ function addNewPostToUser(chat_id, msg) {
     updateUserInfoInFile(admin);
 }
 
-function likePost(chat_id, message_id, user_id, callback_query_id) {
+function likePost(chat_id, message_id, user_id, user_name, callback_query_id) {
     const admin = app.getUser(chat_id, users);
     const post = app.getPost(admin.channel_id, message_id, admin.posts);
 
@@ -309,8 +309,13 @@ function likePost(chat_id, message_id, user_id, callback_query_id) {
     }
 
     for (const user of post.membersWhoLikes) {
-        if (user === user_id) {
-            changeLikes(post, user_id, -1, chat_id, () => {
+        let u_id;
+        if (typeof user == 'string' || typeof user == 'integer') {
+            u_id = user;
+        }else u_id = user.user_id;
+
+        if (u_id == user_id) {
+            changeLikes(post, user_id, undefined, -1, chat_id, () => {
                 bot.answerCallbackQuery({
                     callback_query_id,
                     text: 'رای شما پس گرفته شد !'
@@ -319,7 +324,7 @@ function likePost(chat_id, message_id, user_id, callback_query_id) {
             return;
         }
     }
-    changeLikes(post, user_id, +1, chat_id, () => {
+    changeLikes(post, user_id, user_name, +1, chat_id, () => {
         bot.answerCallbackQuery({
             callback_query_id,
             text: 'رای شما ثبت شد !'
@@ -327,15 +332,18 @@ function likePost(chat_id, message_id, user_id, callback_query_id) {
     });
 }
 
-function changeLikes(post, user_id, val, adminChatId, callback) {
+function changeLikes(post, user_id, name, val, adminChatId, callback) {
     const admin = app.getUser(adminChatId, users);
     const likeString = post.likeString || admin.likeString;
 
     if (val === 1) {
-        post.membersWhoLikes.push(user_id);
+        post.membersWhoLikes.push({ user_id, name });
         post.likes++;
     } else if (val === -1) {
-        post.membersWhoLikes.pop(user_id);
+        let index = Array(post.membersWhoLikes).findIndex(
+            e => e.user_id == user_id
+        );
+        Array(post.membersWhoLikes).splice(index, 1);
         post.likes--;
     }
 
@@ -411,7 +419,8 @@ bot.on('callback_query', msg => {
 
         case forms.callback_type.LIKE:
             // data.data is the chat id of admin
-            likePost(data.data, message_id, msg.from.id, msg.id);
+            let name = msg.from.first_name + ' ' + msg.from.last_name;
+            likePost(data.data, message_id, msg.from.id, name, msg.id);
             break;
 
         case forms.callback_type.SEND:
@@ -420,6 +429,10 @@ bot.on('callback_query', msg => {
 
         case forms.callback_type.LIKE_SET:
             setLikeString(chat_id);
+            break;
+
+        case forms.callback_type.LIKERS_LIST:
+            showLikersList(chat_id, message_id, admin, msg.id);
             break;
 
         case forms.callback_type.MAIN_MENU:
@@ -458,6 +471,16 @@ bot.on('callback_query', msg => {
 
     if (data.data === 'disable') bot.answerCallbackQuery(msg.id);
 });
+
+function showLikersList(chat_id, message_id, admin, callback_query) {
+    if (!admin.isActive) {
+        bot.answerCallbackQuery(callback_query, {
+            show_alert: true,
+            text: templates.account_is_not_premium
+        });
+        return;
+    }
+}
 
 function setSendMenu(chat_id, message_id) {
     const admin = app.getUser(chat_id, users);

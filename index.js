@@ -398,6 +398,13 @@ function mainMenu(chatId) {
     });
 }
 
+// todo: complete this menu for admin
+function adminMenu(chat_id) {
+    let user = app.getUser(chatId, users);
+    let message = templates.admin_menu;
+    
+}
+
 function setChannelId(chatId, entryMessageId) {
     let user = app.getUser(chatId, users);
     let message = templates.setChannel();

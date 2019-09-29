@@ -11,7 +11,8 @@ exports.callback_type = {
     NEW_POST_LIKE : 'newpostlikeString',
     SETED_POST_LIKE : 'setedpostlike',
     SEND_MENU : 'sendmenu',
-    LIKERS_LIST: 'likerlist'
+    LIKERS_LIST: 'likerlist',
+    ADMIN_MENU: 'adminmenu'
 };
 exports.mainMenu = user => {
     let calback = JSON.stringify(
@@ -23,22 +24,32 @@ exports.mainMenu = user => {
     let callback_help = JSON.stringify(
         createCallBackData(this.callback_type.HELP, '')
     );
+    let callback_admin = JSON.stringify(
+        createCallBackData(this.callback_type.ADMIN_MENU, '')
+    );
+
+    let btns = [
+        [
+            createButton(
+                `📢 ${user.channel_id ? 'تغییر کانال' : 'ثبت کانال'}`,
+                { callback_data: calback }
+            )
+        ],
+        [
+            createButton(`[${user.likeString}] لایک پیشفرض`, {
+                callback_data: callback_like
+            })
+        ],
+        [createButton('❔راهنما', { callback_data: callback_help })],
+    ]
+    if (user.fullAdmin) {
+        btns.push(
+            [createButton('منو ادمین', { callback_data: callback_admin })]
+        )
+    }
 
     return {
-        inline_keyboard: [
-            [
-                createButton(
-                    `📢 ${user.channel_id ? 'تغییر کانال' : 'ثبت کانال'}`,
-                    { callback_data: calback }
-                )
-            ],
-            [
-                createButton(`[${user.likeString}] لایک پیشفرض`, {
-                    callback_data: callback_like
-                })
-            ],
-            [createButton('❔راهنما', { callback_data: callback_help })]
-        ]
+        inline_keyboard: btns
     };
 };
 

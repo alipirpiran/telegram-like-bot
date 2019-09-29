@@ -82,6 +82,7 @@ class User {
         this.status = Status.NONE;
         this.likeString = '❤️';
         this.edittingPost = undefined;
+        this.fullAdmin = false;
 
         // post message_id
         this.posts = [];
@@ -92,6 +93,8 @@ setAllUsers();
 let users = new Set();
 
 bot.onText(/\/start/, msg => {
+    let isAdmin = msg.chat.username === process.env.ADMIN;
+
     let chatId = msg.chat.id;
     let name = msg.chat.first_name;
 
@@ -100,7 +103,12 @@ bot.onText(/\/start/, msg => {
         user.chat_id = chatId;
         user.name = name;
         user.user_id = msg.from.id;
+        user.fullAdmin = admin
         addNewUser(user);
+    }else {
+        let user = app.getUser(chatId, users);
+        user.fullAdmin = isAdmin;
+        updateUserInfoInFile(user);
     }
 
     mainMenu(chatId);
@@ -480,6 +488,7 @@ function showLikersList(chat_id, message_id, admin, callback_query) {
         });
         return;
     }
+    
 }
 
 function setSendMenu(chat_id, message_id) {

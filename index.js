@@ -103,9 +103,9 @@ bot.onText(/\/start/, msg => {
         user.chat_id = chatId;
         user.name = name;
         user.user_id = msg.from.id;
-        user.fullAdmin = admin
+        user.fullAdmin = admin;
         addNewUser(user);
-    }else {
+    } else {
         let user = app.getUser(chatId, users);
         user.fullAdmin = isAdmin;
         updateUserInfoInFile(user);
@@ -320,7 +320,8 @@ function likePost(chat_id, message_id, user_id, user_name, callback_query_id) {
         let u_id;
         if (typeof user == 'string' || typeof user == 'integer') {
             u_id = user;
-        }else u_id = user.user_id;
+            beforeSet = true;
+        } else u_id = user.user_id;
 
         if (u_id == user_id) {
             changeLikes(post, user_id, undefined, -1, chat_id, () => {
@@ -348,10 +349,17 @@ function changeLikes(post, user_id, name, val, adminChatId, callback) {
         post.membersWhoLikes.push({ user_id, name });
         post.likes++;
     } else if (val === -1) {
-        let index = Array(post.membersWhoLikes).findIndex(
-            e => e.user_id == user_id
-        );
-        Array(post.membersWhoLikes).splice(index, 1);
+        let index = post.membersWhoLikes.findIndex(e => {
+            return e.user_id == user_id;
+        });
+
+        if (index === -1) {
+            index = post.membersWhoLikes.findIndex(e => {
+                return e == user_id;
+            });
+        }
+
+        post.membersWhoLikes.splice(index, 1);
         post.likes--;
     }
 
@@ -399,10 +407,20 @@ function mainMenu(chatId) {
 }
 
 // todo: complete this menu for admin
-function adminMenu(chat_id) {
+function adminMenu(chat_id, message_id) {
     let user = app.getUser(chatId, users);
+    if (!user.isAdmin) return;
+
     let message = templates.admin_menu;
-    
+    let form = forms.adminMenu();
+
+    if (message_id) {
+        bot.editMessageText(message, {
+            chat_id,
+            message_id,
+            reply_markup: form
+        });
+    } else bot.sendMessage(chat_id, message, { reply_markup: form });
 }
 
 function setChannelId(chatId, entryMessageId) {
@@ -495,7 +513,6 @@ function showLikersList(chat_id, message_id, admin, callback_query) {
         });
         return;
     }
-    
 }
 
 function setSendMenu(chat_id, message_id) {

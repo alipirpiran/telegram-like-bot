@@ -12,7 +12,8 @@ exports.callback_type = {
     SETED_POST_LIKE : 'setedpostlike',
     SEND_MENU : 'sendmenu',
     LIKERS_LIST: 'likerlist',
-    ADMIN_MENU: 'adminmenu'
+    ADMIN_MENU: 'adminmenu',
+    ADD_ACTIVE_USER : 'activeusradd'
 };
 exports.mainMenu = user => {
     let calback = JSON.stringify(
@@ -52,6 +53,18 @@ exports.mainMenu = user => {
         inline_keyboard: btns
     };
 };
+
+exports.adminMenu = () => {
+    let calback_addActiveUser = JSON.stringify(
+        createCallBackData(this.callback_type.ADD_ACTIVE_USER, 'data tha i added !')
+    );
+
+    return {
+        inline_keyboard: [
+            [createButton('افزودن کاربر فعال', calback_addActiveUser)]
+        ]
+    }
+}
 
 exports.sendPost = (likeString) => {
     // complete the data
